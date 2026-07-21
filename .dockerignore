@@ -1,0 +1,16 @@
+.git
+.github
+node_modules
+dist
+build
+coverage
+.env
+.env.*
+!.env.example
+data/
+logs/
+*.log
+docs/
+.vscode/
+README.md
+SECURITY.md

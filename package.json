@@ -1,39 +1,35 @@
 {
-  "type": "commonjs",
-  "dependencies": {
-    "discord.js": "^14.18.0",
-    "typescript": "^5.8.3"
-  },
   "name": "ito-bot",
-  "version": "1.0.0",
-  "description": "[![Release](https://img.shields.io/github/release/Paladise-Lost-Developer-Team/Ito-Bot?include_prereleases=&sort=semver&color=blue)](https://github.com/Paladise-Lost-Developer-Team/Aivis-chan-bot/releases/)\r [![Discord](https://discord.com/api/guilds/1337303326332813334/widget.png)](https://discord.gg/MPx2ny8HXT)",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
+  "version": "2.0.0",
+  "description": "A Discord bot for playing the ito card-ordering game.",
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/src/index.js",
+  "engines": {
+    "node": ">=22.0.0"
   },
   "scripts": {
-    "compile": "tsc",
-    "start": "node build/js/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "tsc": ".\\node_modules\\.bin\\tsc",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "prettier": "prettier --write .",
-    "prettier:check": "prettier --check .",
-    "dev": "node index.js"
+    "build": "tsc",
+    "compile": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/src/index.js",
+    "dev": "tsx watch src/index.ts",
+    "test": "tsx --test src/tests/*.test.ts",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "register-commands": "node dist/src/register-commands.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Paladise-Lost-Developer-Team/Ito-Bot.git"
+  "dependencies": {
+    "discord.js": "^14.21.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Paladise-Lost-Developer-Team/Ito-Bot/issues"
-  },
-  "homepage": "https://github.com/Paladise-Lost-Developer-Team/Ito-Bot#readme",
   "devDependencies": {
-    "ts-node": "^10.0.0"
+    "@eslint/js": "^9.30.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.30.0",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.36.0"
   }
 }

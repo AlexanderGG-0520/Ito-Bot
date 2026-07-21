@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ito-bot-register-commands
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 120
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ito-bot-register-commands
+    spec:
+      restartPolicy: Never
+      serviceAccountName: ito-bot
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: register-commands
+          image: ghcr.io/alexandergg-0520/ito-bot:sha-REPLACE_WITH_COMMIT_SHA
+          command: ['npm', 'run', 'register-commands']
+          envFrom:
+            - configMapRef:
+                name: ito-bot-config
+          env:
+            - name: DISCORD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ito-bot-secrets
+                  key: DISCORD_TOKEN
+            - name: DISCORD_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ito-bot-secrets
+                  key: DISCORD_CLIENT_ID
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
