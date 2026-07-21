@@ -1,7 +1,6 @@
 import type { BotCommand } from './types';
 import { begin } from './begin';
 import { declare } from './declare';
-import { draw } from './draw';
 import { end } from './end';
 import { hand } from './hand';
 import { help } from './help';
@@ -12,13 +11,11 @@ import { momo } from './momo';
 import { play } from './play';
 import { reveal } from './reveal';
 import { start } from './start';
-import { talk } from './talk';
 import { theme } from './theme';
 
 export const commands: readonly BotCommand[] = [
   begin,
   declare,
-  draw,
   end,
   hand,
   help,
@@ -29,7 +26,6 @@ export const commands: readonly BotCommand[] = [
   play,
   reveal,
   start,
-  talk,
   theme,
 ];
 

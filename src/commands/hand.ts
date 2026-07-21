@@ -9,7 +9,7 @@ export const hand: BotCommand = {
     const { key } = requireGuildContext(interaction);
     const cards = gameStore.hand(key, interaction.user.id);
     await interaction.reply({
-      content: `あなたの手札: ${cards.map((card) => `${card.id}（${card.number}）`).join('、') || 'なし'}`,
+      content: `あなたの手札: ${cards.map((card) => `カード${card.slot}（${card.number}）`).join('、') || 'なし'}`,
       flags: MessageFlags.Ephemeral,
     });
   },

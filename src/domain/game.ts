@@ -7,6 +7,8 @@ export const INITIAL_LIVES = 3;
 export const MAX_LIVES = 3;
 export const CARD_MIN = 1;
 export const CARD_MAX = 100;
+export const CARD_SLOT_MIN = 1;
+export const CARD_SLOT_MAX = MAX_STAGE;
 
 export type Random = () => number;
 export type GameKey = `${string}:${string}`;
@@ -14,11 +16,12 @@ export type GameStatus = 'lobby' | 'playing' | 'awaiting_next_stage' | 'won' | '
 
 export interface HandCard {
   readonly id: string;
+  readonly slot: number;
   readonly number: number;
 }
 
 export interface HandCardView {
-  readonly id: string;
+  readonly slot: number;
   readonly number: number;
 }
 
@@ -240,7 +243,11 @@ export class GameStore {
       const cards = deck.splice(0, game.stage);
       game.hands.set(
         playerId,
-        cards.map((number) => ({ id: this.createCardId(), number })),
+        cards.map((number, index) => ({
+          id: this.createCardId(),
+          slot: index + 1,
+          number,
+        })),
       );
     }
     return game;
@@ -248,12 +255,12 @@ export class GameStore {
 
   public hand(key: GameKey, userId: string): HandCardView[] {
     const game = this.requirePlaying(key, userId);
-    return (game.hands.get(userId) ?? []).map((card) => ({ ...card }));
+    return (game.hands.get(userId) ?? []).map(({ slot, number }) => ({ slot, number }));
   }
 
-  public declare(key: GameKey, userId: string, cardId: string, clue: string): GameState {
+  public declare(key: GameKey, userId: string, slot: number, clue: string): GameState {
     const game = this.requirePlaying(key, userId);
-    const card = this.findCard(game, userId, cardId);
+    const card = this.findCardBySlot(game, userId, slot);
     const value = clue.trim();
     if (!value) throw new GameRuleError('EMPTY_DECLARATION', '宣言を入力してください。');
     if (value.length > 200) {
@@ -266,7 +273,7 @@ export class GameStore {
       );
     }
     const playerDeclarations = game.declarations.get(userId) ?? new Map<string, string>();
-    playerDeclarations.set(cardId, value);
+    playerDeclarations.set(card.id, value);
     game.declarations.set(userId, playerDeclarations);
     return game;
   }
@@ -387,9 +394,17 @@ export class GameStore {
     });
   }
 
-  private findCard(game: GameState, userId: string, cardId: string): HandCard {
-    const card = game.hands.get(userId)?.find((candidate) => candidate.id === cardId);
-    if (!card) throw new GameRuleError('CARD_NOT_OWNED', 'そのカードはあなたの手札にありません。');
+  private findCardBySlot(game: GameState, userId: string, slot: number): HandCard {
+    if (!Number.isInteger(slot) || slot < CARD_SLOT_MIN || slot > CARD_SLOT_MAX) {
+      throw new GameRuleError(
+        'INVALID_CARD_SLOT',
+        `カード番号は${CARD_SLOT_MIN}〜${CARD_SLOT_MAX}の整数です。`,
+      );
+    }
+    const card = game.hands.get(userId)?.find((candidate) => candidate.slot === slot);
+    if (!card) {
+      throw new GameRuleError('CARD_SLOT_NOT_FOUND', 'その番号のカードは現在の手札にありません。');
+    }
     return card;
   }
 

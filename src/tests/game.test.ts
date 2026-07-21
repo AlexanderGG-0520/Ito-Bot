@@ -29,7 +29,11 @@ function setHands(game: GameState, hands: Record<string, number[]>): void {
   for (const [userId, numbers] of Object.entries(hands)) {
     game.hands.set(
       userId,
-      numbers.map((number, index) => ({ id: `test-${userId}-${index}-${number}`, number })),
+      numbers.map((number, index) => ({
+        id: `test-${userId}-${index}-${number}`,
+        slot: index + 1,
+        number,
+      })),
     );
   }
 }
@@ -37,7 +41,7 @@ function setHands(game: GameState, hands: Record<string, number[]>): void {
 function declareAll(store: GameStore): void {
   const game = store.get(key)!;
   for (const [userId, cards] of game.hands) {
-    for (const card of cards) store.declare(key, userId, card.id, `表現-${card.id}`);
+    for (const card of cards) store.declare(key, userId, card.slot, `表現-${card.id}`);
   }
 }
 
@@ -98,15 +102,63 @@ test('stage 1, 2, and 3 deal the correct number of unique cards per player', () 
   const stage1 = begin(store);
   assert.equal([...stage1.hands.values()].flat().length, 10);
   assert.equal(new Set([...stage1.hands.values()].flat().map((card) => card.number)).size, 10);
+  assert.deepEqual(
+    [...stage1.hands.values()].map((cards) => cards.map((card) => card.slot)),
+    Array.from({ length: 10 }, () => [1]),
+  );
+  const stage1Ids = new Set([...stage1.hands.values()].flat().map((card) => card.id));
+  assert.equal(stage1Ids.size, 10);
   clearStage(store);
   const stage2 = store.startStage(key);
   assert.equal([...stage2.hands.values()].flat().length, 20);
   assert.equal(new Set([...stage2.hands.values()].flat().map((card) => card.number)).size, 20);
+  assert.deepEqual(
+    [...stage2.hands.values()].map((cards) => cards.map((card) => card.slot)),
+    Array.from({ length: 10 }, () => [1, 2]),
+  );
+  const stage2Cards = [...stage2.hands.values()].flat();
+  assert.equal(new Set(stage2Cards.map((card) => card.id)).size, 20);
+  assert.equal(
+    stage2Cards.every((card) => !stage1Ids.has(card.id)),
+    true,
+  );
   clearStage(store);
   const stage3 = store.startStage(key);
   const playerCards = [...stage3.hands.values()].flat();
   assert.equal(playerCards.length, 30);
   assert.equal(new Set(playerCards.map((card) => card.number)).size, 30);
+  assert.deepEqual(
+    [...stage3.hands.values()].map((cards) => cards.map((card) => card.slot)),
+    Array.from({ length: 10 }, () => [1, 2, 3]),
+  );
+  assert.equal(new Set(playerCards.map((card) => card.id)).size, 30);
+});
+
+test('hand views use stable player-local slots and never expose internal card IDs', () => {
+  const store = readyStore(2);
+  const stage1 = begin(store);
+  assert.deepEqual(
+    store.hand(key, 'user-1').map((card) => card.slot),
+    [1],
+  );
+  assert.deepEqual(
+    store.hand(key, 'user-2').map((card) => card.slot),
+    [1],
+  );
+  assert.equal('id' in store.hand(key, 'user-1')[0]!, false);
+  assert.notEqual(stage1.hands.get('user-1')![0]!.id, stage1.hands.get('user-2')![0]!.id);
+  clearStage(store);
+  store.startStage(key);
+  assert.deepEqual(
+    store.hand(key, 'user-1').map((card) => card.slot),
+    [1, 2],
+  );
+  clearStage(store);
+  store.startStage(key);
+  assert.deepEqual(
+    store.hand(key, 'user-1').map((card) => card.slot),
+    [1, 2, 3],
+  );
 });
 
 test('nextstage is rejected in lobby and concurrent calls advance exactly once without skipping', async () => {
@@ -191,13 +243,13 @@ test('declarations are one-per-card, private-card-associated, revisable, and mec
   setHands(game, { 'user-1': [20, 80], 'user-2': [40, 60] });
   const first = game.hands.get('user-1')![0]!;
   const second = game.hands.get('user-1')![1]!;
-  store.declare(key, 'user-1', first.id, '低め');
-  store.declare(key, 'user-1', first.id, 'かなり低め');
+  store.declare(key, 'user-1', first.slot, '低め');
+  store.declare(key, 'user-1', first.slot, 'かなり低め');
   assert.equal(game.declarations.get('user-1')?.size, 1);
-  store.declare(key, 'user-1', second.id, '高め');
-  store.declare(key, 'user-2', game.hands.get('user-2')![0]!.id, '中低');
+  store.declare(key, 'user-1', second.slot, '高め');
+  store.declare(key, 'user-2', game.hands.get('user-2')![0]!.slot, '中低');
   expectRule('DECLARATIONS_INCOMPLETE', () => store.play(key, 'user-1', 20));
-  store.declare(key, 'user-2', game.hands.get('user-2')![1]!.id, '中高');
+  store.declare(key, 'user-2', game.hands.get('user-2')![1]!.slot, '中高');
   const result = store.play(key, 'user-1', 20);
   assert.equal(result.playedCard, 20);
   assert.equal('hand' in result, false);
@@ -207,18 +259,29 @@ test('declarations cannot be created or changed by another player and hide numbe
   const store = readyStore();
   const game = begin(store);
   const card = game.hands.get('user-1')![0]!;
-  expectRule('CARD_NOT_OWNED', () => store.declare(key, 'user-2', card.id, '乗っ取り'));
+  store.declare(key, 'user-2', card.slot, '自分のカード');
+  assert.equal(game.declarations.get('user-2')?.has(card.id), false);
+  assert.equal(game.declarations.get('user-2')?.size, 1);
   expectRule('DIRECT_NUMBER_DECLARATION', () =>
-    store.declare(key, 'user-1', card.id, String(card.number)),
+    store.declare(key, 'user-1', card.slot, String(card.number)),
   );
   assert.throws(
-    () => store.declare(key, 'user-1', card.id, String(card.number)),
+    () => store.declare(key, 'user-1', card.slot, String(card.number)),
     (error: unknown) =>
       error instanceof GameRuleError &&
       error.code === 'DIRECT_NUMBER_DECLARATION' &&
       !error.message.includes(String(card.number)),
   );
-  expectRule('CARD_NOT_OWNED', () => store.declare(key, 'user-2', card.id, '削除'));
+  expectRule('CARD_SLOT_NOT_FOUND', () => store.declare(key, 'user-2', 2, '存在しないカード'));
+});
+
+test('declaring a valid slot succeeds and a nonexistent current-hand slot fails clearly', () => {
+  const store = readyStore();
+  const game = begin(store);
+  const card = game.hands.get('user-1')![0]!;
+  store.declare(key, 'user-1', 1, 'ひかえめ');
+  assert.equal(game.declarations.get('user-1')?.has(card.id), true);
+  expectRule('CARD_SLOT_NOT_FOUND', () => store.declare(key, 'user-1', 2, '余分'));
 });
 
 test('played and skipped cards lose their declarations, and declarations reset between stages', () => {
@@ -231,6 +294,8 @@ test('played and skipped cards lose their declarations, and declarations reset b
   store.play(key, 'user-1', 50);
   assert.equal(game.declarations.get('user-1')?.has(played.id), false);
   assert.equal(game.declarations.get('user-2')?.has(skipped.id), false);
+  assert.equal(game.hands.get('user-1')!.find((card) => card.number === 80)?.slot, 2);
+  assert.equal(game.hands.get('user-2')!.find((card) => card.number === 70)?.slot, 2);
   clearStage(store);
   const next = store.startStage(key);
   assert.equal(next.declarations.size, 0);
@@ -378,12 +443,11 @@ test('stale card slots from a previous stage and all terminal mutations are reje
   store.create(key, 'guild-a', 'channel-a', 'Easy', 'user-1');
   store.join(key, 'user-2');
   const first = begin(store);
-  const staleId = first.hands.get('user-1')![0]!.id;
   clearStage(store);
   const second = store.startStage(key);
   const staleNumber = first.hands.get('user-1')![0]!.number;
   setHands(second, { 'user-1': [10], 'user-2': [20] });
-  expectRule('CARD_NOT_OWNED', () => store.declare(key, 'user-1', staleId, '古いカード'));
+  expectRule('CARD_SLOT_NOT_FOUND', () => store.declare(key, 'user-1', 2, '古いカード'));
   expectRule('CARD_NOT_OWNED', () => store.play(key, 'user-1', staleNumber));
   declareAll(store);
   store.play(key, 'user-1', 10);

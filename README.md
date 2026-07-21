@@ -6,22 +6,21 @@ Ito Bot is a TypeScript Discord bot for playing the cooperative number-ordering 
 
 Games are independent per guild and channel. The current rules are specified in [docs/game-model.md](docs/game-model.md) and summarized from the [official Ito product page](https://arclightgames.jp/product/ito/).
 
-| Command                            | Purpose                                                                   |
-| ---------------------------------- | ------------------------------------------------------------------------- |
-| `/theme topic:<theme>`             | Set the guild's theme (`Mahjong`, `Easy`, `Normal`, or `Hard`).           |
-| `/start`                           | Create a channel lobby; the author joins automatically.                   |
-| `/join`                            | Join a lobby before its first stage.                                      |
-| `/leave`                           | Leave the current game.                                                   |
-| `/begin`                           | Start stage 1 from the lobby (creator only).                              |
-| `/nextstage`                       | Prepare the next stage after the current stage is cleared (creator only). |
-| `/declare card:<slot> clue:<text>` | Publicly declare one specific private card.                               |
-| `/momo declaration:<text>`         | Set the shared public Momo declaration during stage 3.                    |
-| `/hand` / `/draw`                  | Privately show your hand.                                                 |
-| `/talk`                            | Confirm the discussion phase for a participant.                           |
-| `/play card:<number>`              | Play an owned card.                                                       |
-| `/reveal`                          | Show the current public pile.                                             |
-| `/end`                             | Let the lobby creator cancel the game or report its result.               |
-| `/help`                            | Show paginated help.                                                      |
+| Command                           | Purpose                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------- |
+| `/theme topic:<theme>`            | Set the guild's theme (`Mahjong`, `Easy`, `Normal`, or `Hard`).           |
+| `/start`                          | Create a channel lobby; the author joins automatically.                   |
+| `/join`                           | Join a lobby before its first stage.                                      |
+| `/leave`                          | Leave the current game.                                                   |
+| `/begin`                          | Start stage 1 from the lobby (creator only).                              |
+| `/nextstage`                      | Prepare the next stage after the current stage is cleared (creator only). |
+| `/declare card:<1-3> clue:<text>` | Publicly declare the card slot shown by `/hand`.                          |
+| `/momo declaration:<text>`        | Set the shared public Momo declaration during stage 3.                    |
+| `/hand`                           | Privately show your hand and its player-local card slots.                 |
+| `/play card:<number>`             | Play an owned card.                                                       |
+| `/reveal`                         | Show the current public pile.                                             |
+| `/end`                            | Let the lobby creator cancel the game or report its result.               |
+| `/help`                           | Show paginated help.                                                      |
 
 ## Requirements and local setup
 
@@ -101,12 +100,14 @@ The initial deployment intentionally uses in-memory state. A Pod restart, replac
 
 The deck is numbered 1–100. Stage 1/2/3 deal 1/2/3 cards per player. A play removes that card from its owner's private hand; all remaining cards lower than it are skipped and cost one life each, while the public pile and stage continue. Stage 3 exposes one separate Momo card and uses `/momo` for the group's shared declaration. Three lives are shared; only games with at least three players recover one life between stages, capped at three. A stage requires empty hands and remaining lives; zero lives loses even if the final play also empties every hand.
 
-Each hand card has an opaque private slot, so declarations are associated with
-specific hidden cards without publishing their numbers. Stage 1 requires one
-declaration per player, stage 2 requires two per player, and stage 3 requires
-three per player. A declaration can be revised by its owner; played or skipped
-cards no longer need an active declaration. Card play is blocked until every
-currently held card has a declaration. Direct numeric declarations are rejected
+Each hand card has a stable player-local slot shown by `/hand` as `カード1`,
+`カード2`, or `カード3`. Use `/declare card:<1-3> clue:<text>`; the slot is
+resolved against the invoking player's current hand and declarations are still
+stored against the internal card identity. Stage 1 requires one declaration per
+player, stage 2 requires two per player, and stage 3 requires three per player.
+A declaration can be revised by its owner; played or skipped cards no longer
+need an active declaration. Card play is blocked until every currently held card
+has a declaration. Direct numeric declarations are rejected
 by the bot without revealing the hidden number; numbers spoken in voice chat or
 encoded in natural language remain socially enforced because the bot does not
 monitor conversations.

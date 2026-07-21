@@ -7,10 +7,12 @@ export const declare: BotCommand = {
   data: new SlashCommandBuilder()
     .setName('declare')
     .setDescription('手札のカードごとに数字を表す公開宣言を登録します')
-    .addStringOption((option) =>
+    .addIntegerOption((option) =>
       option
         .setName('card')
-        .setDescription('非公開のカードスロット（/handで確認）')
+        .setDescription('/handに表示されるカード番号')
+        .setMinValue(1)
+        .setMaxValue(3)
         .setRequired(true),
     )
     .addStringOption((option) =>
@@ -18,9 +20,9 @@ export const declare: BotCommand = {
     ),
   async execute(interaction) {
     const { key } = requireGuildContext(interaction);
-    const cardId = interaction.options.getString('card', true);
+    const slot = interaction.options.getInteger('card', true);
     const clue = interaction.options.getString('clue', true);
-    gameStore.declare(key, interaction.user.id, cardId, clue);
+    gameStore.declare(key, interaction.user.id, slot, clue);
     await interaction.reply(`宣言を更新しました: **${clue}**`);
   },
 };
