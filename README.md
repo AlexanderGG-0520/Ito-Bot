@@ -2,6 +2,11 @@
 
 Ito Bot is a TypeScript Discord bot for playing the cooperative number-ordering game Ito in a Discord channel. It uses a newly created Discord application; no old application, token, client ID, invite, or support links are included.
 
+## Legal
+
+- [利用規約 (Terms of Service)](https://alexandergg-0520.github.io/Ito-Bot/terms/)
+- [プライバシーポリシー (Privacy Policy)](https://alexandergg-0520.github.io/Ito-Bot/privacy/)
+
 ## Rules and commands
 
 Games are independent per guild and channel. The current rules are specified in [docs/game-model.md](docs/game-model.md) and summarized from the [official Ito product page](https://arclightgames.jp/product/ito/).
