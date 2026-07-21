@@ -17,7 +17,7 @@ Games are independent per guild and channel. The current rules are specified in 
 | `/declare card:<1-3> clue:<text>` | Publicly declare the card slot shown by `/hand`.                          |
 | `/momo declaration:<text>`        | Set the shared public Momo declaration during stage 3.                    |
 | `/hand`                           | Privately show your hand and its player-local card slots.                 |
-| `/play card:<number>`             | Play an owned card.                                                       |
+| `/play number:<手札の実際の数字>` | Play the actual number shown privately by `/hand`; it becomes public.     |
 | `/reveal`                         | Show the current public pile.                                             |
 | `/end`                            | Let the lobby creator cancel the game or report its result.               |
 | `/help`                           | Show paginated help.                                                      |
@@ -101,9 +101,11 @@ The initial deployment intentionally uses in-memory state. A Pod restart, replac
 The deck is numbered 1–100. Stage 1/2/3 deal 1/2/3 cards per player. A play removes that card from its owner's private hand; all remaining cards lower than it are skipped and cost one life each, while the public pile and stage continue. Stage 3 exposes one separate Momo card and uses `/momo` for the group's shared declaration. Three lives are shared; only games with at least three players recover one life between stages, capped at three. A stage requires empty hands and remaining lives; zero lives loses even if the final play also empties every hand.
 
 Each hand card has a stable player-local slot shown by `/hand` as `カード1`,
-`カード2`, or `カード3`. Use `/declare card:<1-3> clue:<text>`; the slot is
-resolved against the invoking player's current hand and declarations are still
-stored against the internal card identity. Stage 1 requires one declaration per
+`カード2`, or `カード3`. Use `/declare card:<1-3> clue:<text>` to attach a
+clue to that slot; declarations are still stored against the internal card
+identity. Then use `/play number:<手札の実際の数字>` with the actual hidden number
+shown by `/hand`. The declaration uses a private slot, while the play uses and
+publicly reveals the actual number. Stage 1 requires one declaration per
 player, stage 2 requires two per player, and stage 3 requires three per player.
 A declaration can be revised by its owner; played or skipped cards no longer
 need an active declaration. Card play is blocked until every currently held card

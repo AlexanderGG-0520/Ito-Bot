@@ -8,12 +8,17 @@ export const play: BotCommand = {
     .setName('play')
     .setDescription('手札からカードを場に出します')
     .addIntegerOption((option) =>
-      option.setName('card').setDescription('カードの数字').setRequired(true),
+      option
+        .setName('number')
+        .setDescription('自分の手札にある実際の数字')
+        .setMinValue(1)
+        .setMaxValue(100)
+        .setRequired(true),
     ),
   async execute(interaction) {
     const { key } = requireGuildContext(interaction);
-    const card = interaction.options.getInteger('card', true);
-    const result = gameStore.play(key, interaction.user.id, card);
+    const number = interaction.options.getInteger('number', true);
+    const result = gameStore.play(key, interaction.user.id, number);
     const opening = result.status === 'start' ? '脱出開始！' : '次のカードを出してください。';
     const skipped =
       result.skippedCards.length > 0
