@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="{{ site.lang | default: 'ja' }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
+    <meta
+      name="description"
+      content="{{ page.description | default: site.description | escape }}"
+    />
+    <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}" />
+  </head>
+  <body class="site-body{% if page.url == '/' %} page-home{% else %} page-document{% endif %}">
+    <a class="skip-link" href="#main-content">本文へ移動</a>
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="site-title" href="{{ '/' | relative_url }}">ITO BOT</a>
+        <nav class="site-nav" aria-label="メインナビゲーション">
+          <a
+            class="site-nav__link"
+            href="{{ '/' | relative_url }}"
+            aria-current="{% if page.url == '/' %}page{% else %}false{% endif %}"
+            >Ito Bot</a
+          >
+          <a
+            class="site-nav__link"
+            href="{{ '/terms/' | relative_url }}"
+            aria-current="{% if page.url == '/terms/' %}page{% else %}false{% endif %}"
+            >利用規約</a
+          >
+          <a
+            class="site-nav__link"
+            href="{{ '/privacy/' | relative_url }}"
+            aria-current="{% if page.url == '/privacy/' %}page{% else %}false{% endif %}"
+            >プライバシー</a
+          >
+          <a class="site-nav__link" href="https://github.com/AlexanderGG-0520/Ito-Bot">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main-content" class="site-main">
+      {% if page.url == '/' %}
+      <div class="home-content">{{ content }}</div>
+      {% else %}
+      <article class="document">{{ content }}</article>
+      {% endif %}
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <p><span>ITO BOT</span> · 運営者 Alec</p>
+        <p>
+          <a href="https://github.com/AlexanderGG-0520/Ito-Bot">GitHubリポジトリ</a> ·
+          Discordの公式サービスではありません。
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
